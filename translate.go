@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
 )
 
 type Translation struct {
@@ -32,37 +31,18 @@ func loadData() (Data, error) {
 	return data, err
 }
 
-func matchPattern(sourceText string, patternText string) bool {
-	pattern := regexp.MustCompile(`\{\{number:(\d+)\}\}`)
-	source := pattern.ReplaceAllString(patternText, `(\d+)`)
-
-	pattern = regexp.MustCompile(`\{\{text\[(\d+),(\d+)\]:(\d+)\}\}`)
-	source = pattern.ReplaceAllString(source, `(.{${1},${2}})`)
-
-	patternRegex := regexp.MustCompile("^" + source + "$")
-	return patternRegex.MatchString(sourceText)
-}
-
 func translate(sourceText, targetLanguage, screenName string) string {
 	data, err := loadData()
 	if err != nil {
-		return sourceText
+		fmt.Println("Error loading translation data:", err)
+		os.Exit(1)
 	}
 
 	for _, item := range data.TranslationData {
 		if item.Source == sourceText && item.Type == "RdbTextValue" {
 			if translations, found := item.Translations[targetLanguage]; found {
 				for _, translation := range translations {
-					if translation.ScreenName == nil || *translation.ScreenName == screenName {
-						return translation.PublishedDst
-					}
-				}
-			}
-		}
-		if item.Type == "RdbPatternValue" && matchPattern(sourceText, item.Source) {
-			if translations, found := item.Translations[targetLanguage]; found {
-				for _, translation := range translations {
-					if translation.ScreenName == nil || *translation.ScreenName == screenName {
+					if translation.ScreenName == nil || (screenName != "" && translation.ScreenName != nil && *translation.ScreenName == screenName) {
 						return translation.PublishedDst
 					}
 				}
