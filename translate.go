@@ -41,10 +41,23 @@ func translate(sourceText, targetLanguage, screenName string) string {
 	for _, item := range data.TranslationData {
 		if item.Source == sourceText && item.Type == "RdbTextValue" {
 			if translations, found := item.Translations[targetLanguage]; found {
+				var defaultTranslation *string
+				var screenTranslation *string
+
 				for _, translation := range translations {
-					if translation.ScreenName == nil || (screenName != "" && translation.ScreenName != nil && *translation.ScreenName == screenName) {
-						return translation.PublishedDst
+					if translation.ScreenName != nil && *translation.ScreenName == screenName {
+						screenTranslation = &translation.PublishedDst
 					}
+					if translation.ScreenName == nil {
+						defaultTranslation = &translation.PublishedDst
+					}
+				}
+
+				if screenTranslation != nil {
+					return *screenTranslation
+				}
+				if defaultTranslation != nil {
+					return *defaultTranslation
 				}
 			}
 		}
@@ -54,8 +67,6 @@ func translate(sourceText, targetLanguage, screenName string) string {
 }
 
 func main() {
-	//Examples in English, Vietnamnese and one Non-Existing
-	fmt.Println(translate("データセーフティ", "en", "Screen4"))
-	fmt.Println(translate("データセーフティ", "vi", "Screen4"))
-	fmt.Println(translate("Non-existing text", "en", ""))
+	fmt.Println(translate("WOVN.io", "en", "MainActivity"))
+	fmt.Println(translate("WOVN.io", "en", ""))
 }
